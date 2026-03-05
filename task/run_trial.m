@@ -4,8 +4,11 @@ function [trialData, trialIdx, aborted, streakProgress, streakTarget, ...
                     streakProgress, streakTarget, currentStreak, lastOutcome)
 %RUN_TRIAL  Execute a single trial and log all data.
 %
-%   Handles: fixation → game presentation → decision → outcome → ITI
-%   Returns updated trial data struct and streak tracking variables.
+%   Fixed:
+%     - draw_game_screen now returns flipTime directly (it calls Flip internally)
+%     - draw_outcome now calls Flip + WaitSecs internally; no double flip
+%     - draw_fixation calls Flip + WaitSecs internally
+%     - Removed redundant Screen('Flip') calls after draw_* functions
 
 trialIdx = trialIdx + 1;
 
@@ -15,69 +18,73 @@ winProb   = (10 - firstNum) / 10;
 gambleAmt = cfg.gambleMin + randi([0, cfg.gambleMax - cfg.gambleMin]);
 safeLeft  = randi([0, 1]);
 
-% ── Fixation ──────────────────────────────────────────────────────────────
+% ── 1. Fixation ───────────────────────────────────────────────────────────
 flipTime_fix = draw_fixation(scr, cfg);
+% WaitSecs is handled inside draw_fixation
 
-% ── Game presentation (no response) ──────────────────────────────────────
-draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
-                 gambleAmt, firstNum, winProb, 0);
-flipTime_game = Screen('Flip', scr.win);
-WaitSecs(cfg.timing.gamePresent - scr.ifi / 2);
+% ── 2. Game Presentation (no response collected) ──────────────────────────
+flipTime_game = draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
+                                 gambleAmt, firstNum, winProb, 0);
+% draw_game_screen calls Flip internally; wait here
+WaitSecs(cfg.timing.gamePresent - scr.ifi/2);
 
-% ── Decision window ───────────────────────────────────────────────────────
-draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
-                 gambleAmt, firstNum, winProb, 1);
-flipTime_decision = Screen('Flip', scr.win);
-
+% ── 3. Decision Window ────────────────────────────────────────────────────
+flipTime_decision = draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
+                                     gambleAmt, firstNum, winProb, 1);
+% Collect response (draw_game_screen already flipped, so start timing now)
 [choice, RT, aborted] = get_response(scr, cfg, flipTime_decision, safeLeft);
 
-if aborted; return; end
+if aborted
+    % DO NOT call sca here — main_task handles screen closure
+    return;
+end
 
-% ── Determine outcome ─────────────────────────────────────────────────────
+% ── 4. Determine Outcome ─────────────────────────────────────────────────
 missedResponse = (choice == -1);
 gambleChosen   = (choice == 1);
 gambleWon      = false;
 secondNum      = NaN;
 reward         = 0;
+isStreakEnforced = false;
 
 if ~missedResponse && gambleChosen
     [secondNum, gambleWon, isStreakEnforced] = enforce_outcome( ...
         firstNum, blockType, winProb, streakProgress, streakTarget, cfg);
 
     % Update streak progress counter
-    inStreak = (streakProgress < streakTarget);
-    if isStreakEnforced && inStreak
+    if isStreakEnforced
         streakProgress = streakProgress + 1;
-    elseif streakProgress >= streakTarget
+    end
+    if streakProgress >= streakTarget
         % Streak complete — reset for next streak
         streakProgress = 0;
         streakTarget   = randi([cfg.streakMin, cfg.streakMax]);
     end
 
-    reward = gambleWon * gambleAmt;
-else
-    isStreakEnforced = false;
-    if ~missedResponse
-        reward = cfg.safeReward;    % safe chosen
-    end
+    reward = double(gambleWon) * gambleAmt;
+
+elseif ~missedResponse && ~gambleChosen
+    % Safe chosen
+    reward = cfg.safeReward;
 end
 
-% ── Outcome display ───────────────────────────────────────────────────────
+% ── 5. Outcome Display ────────────────────────────────────────────────────
+% draw_outcome handles Flip + WaitSecs internally
 flipTime_outcome = draw_outcome(scr, cfg, choice, gambleChosen, ...
                                 gambleWon, gambleAmt, firstNum, secondNum);
 
-% ── Update streak tracking ────────────────────────────────────────────────
+% ── 6. Update streak tracking ─────────────────────────────────────────────
 [currentStreak, lastOutcome] = compute_streak(gambleChosen, gambleWon, ...
                                               missedResponse, ...
                                               currentStreak, lastOutcome);
-lostChase = (gambleChosen && currentStreak >= 2);
+lostChase = double(gambleChosen && currentStreak >= 2);
 
-% ── ITI ───────────────────────────────────────────────────────────────────
+% ── 7. ITI ────────────────────────────────────────────────────────────────
 Screen('FillRect', scr.win, scr.black);
 Screen('Flip', scr.win);
-WaitSecs(cfg.timing.iti - scr.ifi / 2);
+WaitSecs(cfg.timing.iti - scr.ifi/2);
 
-% ── Log data ──────────────────────────────────────────────────────────────
+% ── 8. Log Data ───────────────────────────────────────────────────────────
 trialData.trialNum(trialIdx)             = trialIdx;
 trialData.blockNum(trialIdx)             = b;
 trialData.blockType(trialIdx)            = blockType;
@@ -92,7 +99,7 @@ trialData.gambleWon(trialIdx)            = double(gambleWon);
 trialData.rewardEarned(trialIdx)         = reward;
 trialData.streakLength(trialIdx)         = currentStreak;
 trialData.isStreakEnforced(trialIdx)     = double(isStreakEnforced);
-trialData.lostChase(trialIdx)            = double(lostChase);
+trialData.lostChase(trialIdx)            = lostChase;
 trialData.missedResponse(trialIdx)       = double(missedResponse);
 trialData.flipTime_fixation(trialIdx)    = flipTime_fix;
 trialData.flipTime_gamePresent(trialIdx) = flipTime_game;

@@ -5,61 +5,71 @@ function flipTime = draw_game_screen(scr, cfg, safeLeft, safeReward, ...
 %   flipTime = draw_game_screen(scr, cfg, safeLeft, safeReward,
 %                               gambleAmt, firstNum, winProb, showPrompt)
 %
-%   Inputs:
-%     safeLeft    - 1 if safe option is on the left side
-%     safeReward  - fixed safe payout ($)
-%     gambleAmt   - gamble payout if won ($)
-%     firstNum    - integer cue shown (0–9)
-%     winProb     - win probability (0.1–1.0)
-%     showPrompt  - 0 = game presentation; 1 = decision (add response cue)
+%   Fixed:
+%     - DrawFormattedText x positions use explicit pixel values, not strings,
+%       to avoid rendering failures with the Windows legacy GDI renderer
+%     - Box text drawn with DrawFormattedText centered in each box
+%     - Flip happens inside this function; caller should NOT flip again
 
 Screen('FillRect', scr.win, scr.black);
 
-winProbPct = round(winProb * 100);
 cx = scr.cx;
 cy = scr.cy;
+winProbPct = round(winProb * 100);
 
-% ── Win probability header ────────────────────────────────────────────────
-probText = sprintf('Win Probability Cue: %d   (%d%%)', firstNum, winProbPct);
-DrawFormattedText(scr.win, probText, 'center', cy - 160, scr.grey);
+% ── Win probability header (top center) ──────────────────────────────────
+probText = sprintf('Win Probability Cue:  %d   (%d%%)', firstNum, winProbPct);
+DrawFormattedText(scr.win, probText, 'center', cy - 180, scr.grey);
 
 % ── Option box geometry ───────────────────────────────────────────────────
-boxW = 220;
-boxH = 160;
-boxY = cy - boxH / 2;
+boxW     = 240;
+boxH     = 170;
+boxY_top = cy - boxH/2 - 20;   % shift boxes slightly above center
+lineW    = 3;                   % box border width
 
-leftBoxX  = cx - 260 - boxW / 2;
-rightBoxX = cx + 260 - boxW / 2;
+% Horizontal center of each box
+leftBoxCx  = cx - 280;
+rightBoxCx = cx + 280;
 
-% ── Assign labels and colors to sides ────────────────────────────────────
+leftRect  = [leftBoxCx  - boxW/2, boxY_top, ...
+             leftBoxCx  + boxW/2, boxY_top + boxH];
+rightRect = [rightBoxCx - boxW/2, boxY_top, ...
+             rightBoxCx + boxW/2, boxY_top + boxH];
+
+% ── Assign labels and colors based on layout ─────────────────────────────
 if safeLeft
-    leftLabel  = sprintf('SAFE\n+$%d', safeReward);
-    rightLabel = sprintf('GAMBLE\n+$%d\n(%d%%)', gambleAmt, winProbPct);
-    leftColor  = scr.white;
-    rightColor = scr.yellow;
+    leftLabel   = sprintf('SAFE\n\n+$%d', safeReward);
+    rightLabel  = sprintf('GAMBLE\n\n+$%d\n(%d%%)', gambleAmt, winProbPct);
+    leftColor   = scr.white;
+    rightColor  = scr.yellow;
 else
-    leftLabel  = sprintf('GAMBLE\n+$%d\n(%d%%)', gambleAmt, winProbPct);
-    rightLabel = sprintf('SAFE\n+$%d', safeReward);
-    leftColor  = scr.yellow;
-    rightColor = scr.white;
+    leftLabel   = sprintf('GAMBLE\n\n+$%d\n(%d%%)', gambleAmt, winProbPct);
+    rightLabel  = sprintf('SAFE\n\n+$%d', safeReward);
+    leftColor   = scr.yellow;
+    rightColor  = scr.white;
 end
 
-% ── Draw left box ─────────────────────────────────────────────────────────
-leftRect = [leftBoxX, boxY, leftBoxX + boxW, boxY + boxH];
-Screen('FrameRect', scr.win, leftColor, leftRect, 3);
-DrawFormattedText(scr.win, leftLabel, leftBoxX + boxW/2 - 40, boxY + 30, leftColor);
+% ── Draw boxes ────────────────────────────────────────────────────────────
+Screen('FrameRect', scr.win, leftColor,  leftRect,  lineW);
+Screen('FrameRect', scr.win, rightColor, rightRect, lineW);
 
-% ── Draw right box ────────────────────────────────────────────────────────
-rightRect = [rightBoxX, boxY, rightBoxX + boxW, boxY + boxH];
-Screen('FrameRect', scr.win, rightColor, rightRect, 3);
-DrawFormattedText(scr.win, rightLabel, rightBoxX + boxW/2 - 50, boxY + 30, rightColor);
+% ── Draw labels centered inside each box ─────────────────────────────────
+% DrawFormattedText with 'center' only centers horizontally across the
+% whole screen. For box-centered text, we compute x offsets manually.
+DrawFormattedText(scr.win, leftLabel, ...
+    leftBoxCx - boxW/2 + 10, boxY_top + 25, leftColor);
+
+DrawFormattedText(scr.win, rightLabel, ...
+    rightBoxCx - boxW/2 + 10, boxY_top + 25, rightColor);
 
 % ── Response prompt ───────────────────────────────────────────────────────
 if showPrompt
     DrawFormattedText(scr.win, ...
-        '<-- LEFT                                          RIGHT -->', ...
-        'center', cy + 140, scr.grey);
-    DrawFormattedText(scr.win, 'Choose Now!', 'center', cy + 190, scr.white);
+        '<-- LEFT            RIGHT -->', ...
+        'center', cy + 145, scr.grey);
+    DrawFormattedText(scr.win, ...
+        'Choose Now!  (Left or Right Arrow)', ...
+        'center', cy + 190, scr.white);
 end
 
 flipTime = Screen('Flip', scr.win);

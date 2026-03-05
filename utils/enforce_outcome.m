@@ -1,7 +1,7 @@
 function [secondNum, gambleWon, isEnforced] = enforce_outcome(firstNum, ...
-                                               blockType, winProb, ...
-                                               streakProgress, streakTarget, ...
-                                               cfg)
+    blockType, winProb, ...
+    streakProgress, streakTarget, ...
+    cfg)
 %ENFORCE_OUTCOME  Determine second integer and win/loss based on block type.
 %
 %   Implements the adaptive streak sequencing algorithm:
@@ -50,7 +50,6 @@ else
     secondNum = draw_free_second(firstNum);
     gambleWon = (secondNum > firstNum);
 end
-end
 
 % ── Helper: draw a second number with no ties ─────────────────────────────
 function secondNum = draw_free_second(firstNum)
@@ -58,4 +57,5 @@ function secondNum = draw_free_second(firstNum)
     while secondNum == firstNum
         secondNum = randi([0, 9]);
     end
+end
 end

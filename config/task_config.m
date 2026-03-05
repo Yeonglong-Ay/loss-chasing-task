@@ -15,8 +15,8 @@ cfg.blockTypeNames = {'Neutral', 'Loss-Heavy', 'Win-Heavy'};
 % ── Session structure ─────────────────────────────────────────────────────
 cfg.nTrialsPerBlock = 21;   % trials per block
 cfg.nBlocksPerType  = 2;    % repetitions of each block type per session
-                            % total blocks = 3 types * 2 = 6
-                            % total trials = 6 * 21 = 126
+% total blocks = 3 types * 2 = 6
+% total trials = 6 * 21 = 126
 
 % ── Timing (seconds) ─────────────────────────────────────────────────────
 cfg.timing.fixation    = 0.500;

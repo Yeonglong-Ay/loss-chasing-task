@@ -2,6 +2,10 @@ function completed = run_practice(scr, cfg)
 %RUN_PRACTICE  Run practice block (no streak enforcement, no data saved).
 %
 %   completed = run_practice(scr, cfg)
+%
+%   Returns:
+%     completed = true  if practice finished normally
+%     completed = false if Escape was pressed (main_task handles sca)
 
 completed = true;
 
@@ -24,20 +28,23 @@ for p = 1:cfg.nPracticeTrials
     safeLeft  = randi([0, 1]);
 
     % ── Fixation ──────────────────────────────────────────────────────────
-    draw_fixation(scr, cfg);
+    Screen('FillRect', scr.win, scr.black);
+    DrawFormattedText(scr.win, '+', 'center', 'center', scr.white);
+    tFix = Screen('Flip', scr.win);
+    WaitSecs(cfg.timing.fixation - scr.ifi/2);
 
     % ── Game Presentation (no response) ───────────────────────────────────
     draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
         gambleAmt, firstNum, winProb, 0);
-    Screen('Flip', scr.win);
+    tGame = Screen('Flip', scr.win);
     WaitSecs(cfg.timing.gamePresent - scr.ifi/2);
 
     % ── Decision Window ───────────────────────────────────────────────────
     draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
         gambleAmt, firstNum, winProb, 1);
-    flipT = Screen('Flip', scr.win);
+    tDecision = Screen('Flip', scr.win);
 
-    [choice, ~, aborted] = get_response(scr, cfg, flipT, safeLeft);
+    [choice, ~, aborted] = get_response(scr, cfg, tDecision, safeLeft);
 
     if aborted
         completed = false;

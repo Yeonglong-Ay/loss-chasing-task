@@ -1,0 +1,13 @@
+# Data files
+data/*.mat
+data/*.csv
+
+# MATLAB temporary files
+*.asv
+*.m~
+
+# macOS
+.DS_Store
+
+# PTB crash logs
+*.txt

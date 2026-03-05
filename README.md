@@ -101,6 +101,7 @@ http://psychtoolbox.org/download
 ---
 
 ## Repository Structure
+```
 loss-chasing-task/
 ├── main_task.m # Entry point — run this to start the task
 ├── config/
@@ -129,8 +130,7 @@ loss-chasing-task/
 │ ├── enforce_outcome.m # Adaptive streak sequencing
 │ └── wait_for_key.m # Key wait helper
 └── data/ # Output .mat files (gitignored)
-
-
+```
 ---
 
 ## Usage
@@ -140,6 +140,7 @@ loss-chasing-task/
 ```matlab
 % In MATLAB, from the repository root:
 main_task
+```
 
 ---
 

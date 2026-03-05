@@ -2,7 +2,6 @@
 
 **Author:** Yeonglong Ay  
 **Institution:** Dartmouth College — Sun Lab  
-**Project:** F31 Doctoral Dissertation — Aim 1 Behavioral Task  
 **Last Updated:** 2025
 
 ---
@@ -10,7 +9,7 @@
 ## Overview
 
 This repository contains the MATLAB/Psychtoolbox implementation of the
-loss-chasing gambling task used in **Aim 1** of my F31 fellowship project.
+loss-chasing gambling task used in **Aim 1** of my project.
 The task is designed to elicit and measure loss-chasing behavior — the
 tendency to continue gambling after a streak of consecutive losses — while
 recording precise behavioral metrics for subsequent intracranial EEG (iEEG)

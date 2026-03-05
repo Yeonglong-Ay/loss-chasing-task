@@ -1,15 +1,10 @@
 function flipTime = draw_game_screen(scr, cfg, safeLeft, safeReward, ...
                                      gambleAmt, firstNum, winProb, showPrompt)
-%DRAW_GAME_SCREEN  Draw the game presentation or decision screen.
+%DRAW_GAME_SCREEN  Draw game screen and flip. Caller handles WaitSecs.
 %
-%   flipTime = draw_game_screen(scr, cfg, safeLeft, safeReward,
-%                               gambleAmt, firstNum, winProb, showPrompt)
-%
-%   Fixed:
-%     - DrawFormattedText x positions use explicit pixel values, not strings,
-%       to avoid rendering failures with the Windows legacy GDI renderer
-%     - Box text drawn with DrawFormattedText centered in each box
-%     - Flip happens inside this function; caller should NOT flip again
+%  This function only DRAWS and FLIPS — it does NOT call WaitSecs.
+%  The caller (run_trial) is responsible for waiting after each flip
+%  so that timing is transparent and controllable from one place.
 
 Screen('FillRect', scr.win, scr.black);
 
@@ -17,60 +12,50 @@ cx = scr.cx;
 cy = scr.cy;
 winProbPct = round(winProb * 100);
 
-% ── Win probability header (top center) ──────────────────────────────────
+% ── Win probability header ────────────────────────────────────────────────
 probText = sprintf('Win Probability Cue:  %d   (%d%%)', firstNum, winProbPct);
 DrawFormattedText(scr.win, probText, 'center', cy - 180, scr.grey);
 
-% ── Option box geometry ───────────────────────────────────────────────────
+% ── Box geometry ─────────────────────────────────────────────────────────
 boxW     = 240;
 boxH     = 170;
-boxY_top = cy - boxH/2 - 20;   % shift boxes slightly above center
-lineW    = 3;                   % box border width
+boxY_top = cy - boxH/2 - 20;
+lineW    = 3;
 
-% Horizontal center of each box
 leftBoxCx  = cx - 280;
 rightBoxCx = cx + 280;
 
-leftRect  = [leftBoxCx  - boxW/2, boxY_top, ...
-             leftBoxCx  + boxW/2, boxY_top + boxH];
-rightRect = [rightBoxCx - boxW/2, boxY_top, ...
-             rightBoxCx + boxW/2, boxY_top + boxH];
+leftRect  = [leftBoxCx  - boxW/2, boxY_top, leftBoxCx  + boxW/2, boxY_top + boxH];
+rightRect = [rightBoxCx - boxW/2, boxY_top, rightBoxCx + boxW/2, boxY_top + boxH];
 
-% ── Assign labels and colors based on layout ─────────────────────────────
+% ── Assign labels ─────────────────────────────────────────────────────────
 if safeLeft
-    leftLabel   = sprintf('SAFE\n\n+$%d', safeReward);
-    rightLabel  = sprintf('GAMBLE\n\n+$%d\n(%d%%)', gambleAmt, winProbPct);
-    leftColor   = scr.white;
-    rightColor  = scr.yellow;
+    leftLabel  = sprintf('SAFE\n\n+$%d', safeReward);
+    rightLabel = sprintf('GAMBLE\n\n+$%d\n(%d%%)', gambleAmt, winProbPct);
+    leftColor  = scr.white;
+    rightColor = scr.yellow;
 else
-    leftLabel   = sprintf('GAMBLE\n\n+$%d\n(%d%%)', gambleAmt, winProbPct);
-    rightLabel  = sprintf('SAFE\n\n+$%d', safeReward);
-    leftColor   = scr.yellow;
-    rightColor  = scr.white;
+    leftLabel  = sprintf('GAMBLE\n\n+$%d\n(%d%%)', gambleAmt, winProbPct);
+    rightLabel = sprintf('SAFE\n\n+$%d', safeReward);
+    leftColor  = scr.yellow;
+    rightColor = scr.white;
 end
 
 % ── Draw boxes ────────────────────────────────────────────────────────────
 Screen('FrameRect', scr.win, leftColor,  leftRect,  lineW);
 Screen('FrameRect', scr.win, rightColor, rightRect, lineW);
 
-% ── Draw labels centered inside each box ─────────────────────────────────
-% DrawFormattedText with 'center' only centers horizontally across the
-% whole screen. For box-centered text, we compute x offsets manually.
-DrawFormattedText(scr.win, leftLabel, ...
-    leftBoxCx - boxW/2 + 10, boxY_top + 25, leftColor);
+DrawFormattedText(scr.win, leftLabel,  leftBoxCx  - boxW/2 + 10, boxY_top + 25, leftColor);
+DrawFormattedText(scr.win, rightLabel, rightBoxCx - boxW/2 + 10, boxY_top + 25, rightColor);
 
-DrawFormattedText(scr.win, rightLabel, ...
-    rightBoxCx - boxW/2 + 10, boxY_top + 25, rightColor);
-
-% ── Response prompt ───────────────────────────────────────────────────────
+% ── Response prompt (decision window only) ────────────────────────────────
 if showPrompt
-    DrawFormattedText(scr.win, ...
-        '<-- LEFT            RIGHT -->', ...
+    DrawFormattedText(scr.win, '<-- LEFT            RIGHT -->', ...
         'center', cy + 145, scr.grey);
-    DrawFormattedText(scr.win, ...
-        'Choose Now!  (Left or Right Arrow)', ...
+    DrawFormattedText(scr.win, 'Choose Now!  (Left or Right Arrow)', ...
         'center', cy + 190, scr.white);
 end
 
+% ── Single flip — NO WaitSecs here ───────────────────────────────────────
 flipTime = Screen('Flip', scr.win);
 end

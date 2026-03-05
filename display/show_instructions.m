@@ -2,17 +2,12 @@ function show_instructions(scr, cfg)
 %SHOW_INSTRUCTIONS  Display full task instructions and wait for SPACE.
 %
 %   show_instructions(scr, cfg)
-%
-%   Fixed:
-%     - Added explicit FillRect + Flip sequence with validity check
-%     - Wrapped in try/catch to report draw errors clearly
-%     - Used explicit wrapAt column for Windows GDI renderer compatibility
 
 try
     Screen('FillRect', scr.win, scr.black);
 catch ME
     error('show_instructions: Window appears closed before instructions. Error: %s', ...
-          ME.message);
+        ME.message);
 end
 
 instrText = [ ...

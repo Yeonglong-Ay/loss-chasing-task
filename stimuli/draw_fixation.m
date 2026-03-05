@@ -1,11 +1,7 @@
 function flipTime = draw_fixation(scr, cfg)
-%DRAW_FIXATION  Draw fixation cross, flip, and wait fixation duration.
+%DRAW_FIXATION  Draw fixation cross and flip; wait fixation duration.
 %
 %   flipTime = draw_fixation(scr, cfg)
-%
-%   Fixed:
-%     - Explicit pixel coordinates for '+' instead of relying on 'center'
-%       string, which can fail with the Windows GDI legacy renderer
 
 Screen('FillRect', scr.win, scr.black);
 

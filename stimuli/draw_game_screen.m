@@ -2,9 +2,12 @@ function flipTime = draw_game_screen(scr, cfg, safeLeft, safeReward, ...
     gambleAmt, firstNum, winProb, showPrompt)
 %DRAW_GAME_SCREEN  Draw game screen and flip. Caller handles WaitSecs.
 %
-%  This function only DRAWS and FLIPS — it does NOT call WaitSecs.
-%  The caller (run_trial) is responsible for waiting after each flip
-%  so that timing is transparent and controllable from one place.
+%   flipTime = draw_game_screen(scr, cfg, safeLeft, safeReward,
+%                               gambleAmt, firstNum, winProb, showPrompt)
+%
+%   This function only DRAWS and FLIPS — it does NOT call WaitSecs.
+%   The caller (run_trial) is responsible for waiting after each flip
+%   so that timing is transparent and controllable from one place.
 
 Screen('FillRect', scr.win, scr.black);
 

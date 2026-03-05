@@ -2,10 +2,6 @@ function completed = run_practice(scr, cfg)
 %RUN_PRACTICE  Run practice block (no streak enforcement, no data saved).
 %
 %   completed = run_practice(scr, cfg)
-%
-%   Returns:
-%     completed = true  if practice finished normally
-%     completed = false if Escape was pressed (main_task handles sca)
 
 completed = true;
 
@@ -28,23 +24,20 @@ for p = 1:cfg.nPracticeTrials
     safeLeft  = randi([0, 1]);
 
     % ── Fixation ──────────────────────────────────────────────────────────
-    Screen('FillRect', scr.win, scr.black);
-    DrawFormattedText(scr.win, '+', 'center', 'center', scr.white);
-    tFix = Screen('Flip', scr.win);
-    WaitSecs(cfg.timing.fixation - scr.ifi/2);
+    draw_fixation(scr, cfg);
 
     % ── Game Presentation (no response) ───────────────────────────────────
     draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
         gambleAmt, firstNum, winProb, 0);
-    tGame = Screen('Flip', scr.win);
+    Screen('Flip', scr.win);
     WaitSecs(cfg.timing.gamePresent - scr.ifi/2);
 
     % ── Decision Window ───────────────────────────────────────────────────
     draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
         gambleAmt, firstNum, winProb, 1);
-    tDecision = Screen('Flip', scr.win);
+    flipT = Screen('Flip', scr.win);
 
-    [choice, ~, aborted] = get_response(scr, cfg, tDecision, safeLeft);
+    [choice, ~, aborted] = get_response(scr, cfg, flipT, safeLeft);
 
     if aborted
         completed = false;
@@ -57,10 +50,7 @@ for p = 1:cfg.nPracticeTrials
     secondNum    = NaN;
 
     if gambleChosen
-        secondNum = randi([0, 9]);
-        while secondNum == firstNum
-            secondNum = randi([0, 9]);
-        end
+        secondNum = draw_free_second(firstNum);
         gambleWon = (secondNum > firstNum);
     end
 
@@ -84,4 +74,12 @@ DrawFormattedText(scr.win, ...
     'center', 'center', scr.white);
 Screen('Flip', scr.win);
 wait_for_key(cfg.keys.space);
+end
+
+% ── Helper ────────────────────────────────────────────────────────────────
+function secondNum = draw_free_second(firstNum)
+secondNum = randi([0, 9]);
+while secondNum == firstNum
+    secondNum = randi([0, 9]);
+end
 end

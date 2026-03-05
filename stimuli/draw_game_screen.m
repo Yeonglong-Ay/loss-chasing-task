@@ -1,5 +1,5 @@
 function flipTime = draw_game_screen(scr, cfg, safeLeft, safeReward, ...
-                                     gambleAmt, firstNum, winProb, showPrompt)
+    gambleAmt, firstNum, winProb, showPrompt)
 %DRAW_GAME_SCREEN  Draw game screen and flip. Caller handles WaitSecs.
 %
 %  This function only DRAWS and FLIPS — it does NOT call WaitSecs.

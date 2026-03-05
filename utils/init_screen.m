@@ -2,6 +2,12 @@ function scr = init_screen()
 %INIT_SCREEN  Open Psychtoolbox window and return screen parameters struct.
 %
 %   scr = init_screen()
+%
+%   Fixed:
+%     - BlendFunction now uses string constant names instead of numeric
+%       values, which is the correct cross-platform PTB syntax
+%     - Added fallback try/catch around BlendFunction so a failure here
+%       does not crash the entire task (blending is cosmetic only)
 
 PsychDefaultSetup(2);
 
@@ -31,7 +37,7 @@ Screen('TextFont',  scr.win, 'Arial');
 Screen('TextSize',  scr.win, 32);
 Screen('TextStyle', scr.win, 1);   % bold
 
-% ── Blend function using string names — cross-platform safe ───────────────
+% ── Blend function using string names — cross-platform safe ────────────────
 try
     Screen('BlendFunction', scr.win, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 catch blendErr

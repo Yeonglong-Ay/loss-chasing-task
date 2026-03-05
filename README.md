@@ -144,7 +144,7 @@ main_task
 
 ---
 
-## Usage
+## Citation
 
 If you use or adapt this task, please cite:
 

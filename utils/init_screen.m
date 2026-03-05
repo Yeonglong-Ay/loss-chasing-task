@@ -4,17 +4,16 @@ function scr = init_screen()
 %   scr = init_screen()
 %
 %   Fixed:
-%     - Removed GL_SRC_ALPHA constants (not reliably defined on Windows)
-%     - TextFont/Size/Style set AFTER OpenWindow
-%     - SkipSyncTests set to 1 for Windows DWM compatibility warning
-%       (set back to 0 for actual data collection)
+%     - BlendFunction now uses string constant names instead of numeric
+%       values, which is the correct cross-platform PTB syntax
+%     - Added fallback try/catch around BlendFunction so a failure here
+%       does not crash the entire task (blending is cosmetic only)
 
 PsychDefaultSetup(2);
 
 % ── Windows DWM workaround ────────────────────────────────────────────────
-% The DWM compositor warning is informational only on Windows 10/11.
-% SkipSyncTests = 1 suppresses the hard sync error during development;
-% change to 0 for actual data collection and verify with external equipment.
+% SkipSyncTests = 1 for development on Windows 10/11 with DWM active.
+% Set back to 0 for actual data collection and verify timing externally.
 Screen('Preference', 'SkipSyncTests', 1);
 Screen('Preference', 'Verbosity', 3);
 
@@ -38,9 +37,15 @@ Screen('TextFont',  scr.win, 'Arial');
 Screen('TextSize',  scr.win, 32);
 Screen('TextStyle', scr.win, 1);   % bold
 
-% ── Blend function using numeric constants (Windows-safe) ─────────────────
-% GL_SRC_ALPHA = 770, GL_ONE_MINUS_SRC_ALPHA = 771
-Screen('BlendFunction', scr.win, 770, 771);
+% ── Blend function ────────────────────────────────────────────────────────
+% Use string names — the correct PTB cross-platform syntax.
+% Wrapped in try/catch because alpha blending is cosmetic only;
+% a failure here should not abort the task.
+try
+    Screen('BlendFunction', scr.win, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
+catch blendErr
+    warning('init_screen: BlendFunction failed (non-critical): %s', blendErr.message);
+end
 
 % ── Screen geometry ───────────────────────────────────────────────────────
 [scr.cx, scr.cy] = RectCenter(scr.winRect);

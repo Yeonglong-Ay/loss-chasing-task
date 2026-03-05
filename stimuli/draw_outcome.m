@@ -1,45 +1,35 @@
-function flipTime = draw_outcome(scr, cfg, choice, gambleChosen, ...
-                                  gambleWon, gambleAmt, firstNum, secondNum)
-%DRAW_OUTCOME  Draw outcome feedback and flip; wait outcome duration.
+function draw_outcome(scr, cfg, choice, gambleChosen, gambleWon, ...
+    gambleAmt, firstNum, secondNum)
+%DRAW_OUTCOME  Draw outcome screen (win/loss/safe) and flip.
 %
-%   flipTime = draw_outcome(scr, cfg, choice, gambleChosen,
-%                           gambleWon, gambleAmt, firstNum, secondNum)
-%
-%   Fixed:
-%     - Flip now happens inside this function (consistent with draw_game_screen)
-%     - WaitSecs moved here so caller doesn't need to manage it
+%   draw_outcome(scr, cfg, choice, gambleChosen, gambleWon, gambleAmt, ...
+%                firstNum, secondNum)
 
 Screen('FillRect', scr.win, scr.black);
 
+cx = scr.cx;
+cy = scr.cy;
+
 if choice == -1
-    % ── Missed response ───────────────────────────────────────────────────
-    outcomeText  = 'TOO SLOW!';
+    % Timeout
+    outcomeText = 'TOO SLOW!';
     outcomeColor = scr.red;
-    DrawFormattedText(scr.win, outcomeText, 'center', 'center', outcomeColor);
-
-elseif ~gambleChosen
-    % ── Safe chosen ───────────────────────────────────────────────────────
-    outcomeText  = sprintf('Safe Choice:  +$%d', cfg.safeReward);
+elseif choice == 0
+    % Safe chosen
+    outcomeText = sprintf('Safe: +$%d', cfg.safeReward);
     outcomeColor = scr.white;
-    DrawFormattedText(scr.win, outcomeText, 'center', 'center', outcomeColor);
-
 else
-    % ── Gamble outcome ────────────────────────────────────────────────────
+    % Gamble chosen
     if gambleWon
-        outcomeText  = sprintf('Gamble WON:  +$%d !', gambleAmt);
+        outcomeText = sprintf('Gamble WON: +$%d!', gambleAmt);
         outcomeColor = scr.green;
     else
-        outcomeText  = 'Gamble LOST:  $0';
+        outcomeText = 'Gamble LOST: $0';
         outcomeColor = scr.red;
     end
-    DrawFormattedText(scr.win, outcomeText, 'center', scr.cy - 40, outcomeColor);
-
-    % Show number reveal below outcome text
-    numText = sprintf('Your number:  %d     |     Table number:  %d', ...
-                      firstNum, secondNum);
-    DrawFormattedText(scr.win, numText, 'center', scr.cy + 40, scr.grey);
 end
 
-flipTime = Screen('Flip', scr.win);
+DrawFormattedText(scr.win, outcomeText, 'center', cy, outcomeColor);
+Screen('Flip', scr.win);
 WaitSecs(cfg.timing.outcome - scr.ifi/2);
 end

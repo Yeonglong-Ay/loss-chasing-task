@@ -2,12 +2,6 @@ function scr = init_screen()
 %INIT_SCREEN  Open Psychtoolbox window and return screen parameters struct.
 %
 %   scr = init_screen()
-%
-%   Fixed:
-%     - BlendFunction now uses string constant names instead of numeric
-%       values, which is the correct cross-platform PTB syntax
-%     - Added fallback try/catch around BlendFunction so a failure here
-%       does not crash the entire task (blending is cosmetic only)
 
 PsychDefaultSetup(2);
 
@@ -37,10 +31,7 @@ Screen('TextFont',  scr.win, 'Arial');
 Screen('TextSize',  scr.win, 32);
 Screen('TextStyle', scr.win, 1);   % bold
 
-% ── Blend function ────────────────────────────────────────────────────────
-% Use string names — the correct PTB cross-platform syntax.
-% Wrapped in try/catch because alpha blending is cosmetic only;
-% a failure here should not abort the task.
+% ── Blend function using string names — cross-platform safe ───────────────
 try
     Screen('BlendFunction', scr.win, 'GL_SRC_ALPHA', 'GL_ONE_MINUS_SRC_ALPHA');
 catch blendErr
@@ -53,7 +44,4 @@ scr.ifi = Screen('GetFlipInterval', scr.win);
 
 % ── Priority ─────────────────────────────────────────────────────────────
 Priority(MaxPriority(scr.win));
-
-fprintf('Screen opened: %d x %d @ %.1f Hz\n', ...
-    scr.winRect(3), scr.winRect(4), 1/scr.ifi);
 end

@@ -1,10 +1,7 @@
 function wait_for_key(targetKey)
-%WAIT_FOR_KEY  Block execution until a specific key is pressed and released.
+%WAIT_FOR_KEY  Wait for a specific key press.
 %
 %   wait_for_key(targetKey)
-%
-%   Input:
-%     targetKey - KbName key code (e.g., cfg.keys.space)
 
 KbReleaseWait;
 while true

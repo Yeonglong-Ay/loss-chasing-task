@@ -6,11 +6,6 @@ function completed = run_practice(scr, cfg)
 %   Returns:
 %     completed = true  if practice finished normally
 %     completed = false if Escape was pressed (main_task handles sca)
-%
-%   Fixed:
-%     - Removed sca/Priority(0) calls — screen management is main_task's job
-%     - Moved draw_free_second inline to avoid scoping issues
-%     - Added proper flip-then-wait timing pattern
 
 completed = true;
 
@@ -40,29 +35,28 @@ for p = 1:cfg.nPracticeTrials
 
     % ── Game Presentation (no response) ───────────────────────────────────
     draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
-                     gambleAmt, firstNum, winProb, 0);
+        gambleAmt, firstNum, winProb, 0);
     tGame = Screen('Flip', scr.win);
     WaitSecs(cfg.timing.gamePresent - scr.ifi/2);
 
     % ── Decision Window ───────────────────────────────────────────────────
     draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
-                     gambleAmt, firstNum, winProb, 1);
+        gambleAmt, firstNum, winProb, 1);
     tDecision = Screen('Flip', scr.win);
 
     [choice, ~, aborted] = get_response(scr, cfg, tDecision, safeLeft);
 
     if aborted
         completed = false;
-        return;   % Return to main_task; do NOT call sca here
+        return;
     end
 
-    % ── Outcome (always free draw, no enforcement) ────────────────────────
+    % ── Outcome (always free, no enforcement) ──────────────────────────────
     gambleChosen = (choice == 1);
     gambleWon    = false;
     secondNum    = NaN;
 
     if gambleChosen
-        % Draw second number with no ties
         secondNum = randi([0, 9]);
         while secondNum == firstNum
             secondNum = randi([0, 9]);
@@ -71,7 +65,7 @@ for p = 1:cfg.nPracticeTrials
     end
 
     draw_outcome(scr, cfg, choice, gambleChosen, gambleWon, ...
-                 gambleAmt, firstNum, secondNum);
+        gambleAmt, firstNum, secondNum);
     Screen('Flip', scr.win);
     WaitSecs(cfg.timing.outcome - scr.ifi/2);
 
@@ -79,15 +73,14 @@ for p = 1:cfg.nPracticeTrials
     Screen('FillRect', scr.win, scr.black);
     Screen('Flip', scr.win);
     WaitSecs(cfg.timing.iti - scr.ifi/2);
-
-end % practice trial loop
+end
 
 % ── Practice complete screen ──────────────────────────────────────────────
 Screen('FillRect', scr.win, scr.black);
 DrawFormattedText(scr.win, ...
     ['Practice complete!\n\n' ...
-     'The MAIN TASK will now begin.\n\n' ...
-     'Press SPACE to continue.'], ...
+    'The MAIN TASK will now begin.\n\n' ...
+    'Press SPACE to continue.'], ...
     'center', 'center', scr.white);
 Screen('Flip', scr.win);
 wait_for_key(cfg.keys.space);

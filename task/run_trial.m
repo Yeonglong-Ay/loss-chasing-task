@@ -4,11 +4,11 @@ function [trialData, trialIdx, aborted, streakProgress, streakTarget, ...
                     streakProgress, streakTarget, currentStreak, lastOutcome)
 %RUN_TRIAL  Execute a single trial and log all data.
 %
-%   Fixed:
-%     - draw_game_screen now returns flipTime directly (it calls Flip internally)
-%     - draw_outcome now calls Flip + WaitSecs internally; no double flip
-%     - draw_fixation calls Flip + WaitSecs internally
-%     - Removed redundant Screen('Flip') calls after draw_* functions
+%  TIMING CONTRACT (each draw_* function owns its OWN Flip):
+%    draw_fixation     → flips + waits  fixation duration internally
+%    draw_game_screen  → flips ONLY     (no wait); caller waits here
+%    draw_outcome      → flips + waits  outcome duration internally
+%  Callers must NOT call Screen('Flip') after any draw_* function.
 
 trialIdx = trialIdx + 1;
 
@@ -18,45 +18,45 @@ winProb   = (10 - firstNum) / 10;
 gambleAmt = cfg.gambleMin + randi([0, cfg.gambleMax - cfg.gambleMin]);
 safeLeft  = randi([0, 1]);
 
-% ── 1. Fixation ───────────────────────────────────────────────────────────
+% ── 1. Fixation (flip + wait inside draw_fixation) ───────────────────────
 flipTime_fix = draw_fixation(scr, cfg);
-% WaitSecs is handled inside draw_fixation
 
-% ── 2. Game Presentation (no response collected) ──────────────────────────
+% ── 2. Game Presentation — showPrompt = 0 ────────────────────────────────
+% draw_game_screen flips internally and returns the flip timestamp.
+% We then wait the gamePresent duration HERE in the caller.
 flipTime_game = draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
                                  gambleAmt, firstNum, winProb, 0);
-% draw_game_screen calls Flip internally; wait here
 WaitSecs(cfg.timing.gamePresent - scr.ifi/2);
 
-% ── 3. Decision Window ────────────────────────────────────────────────────
+% ── 3. Decision Window — showPrompt = 1 ──────────────────────────────────
+% Flip the decision screen; get_response starts timing from this flip.
 flipTime_decision = draw_game_screen(scr, cfg, safeLeft, cfg.safeReward, ...
                                      gambleAmt, firstNum, winProb, 1);
-% Collect response (draw_game_screen already flipped, so start timing now)
+% Response collection — runs until key press or maxDecision timeout
 [choice, RT, aborted] = get_response(scr, cfg, flipTime_decision, safeLeft);
 
 if aborted
-    % DO NOT call sca here — main_task handles screen closure
-    return;
+    return;   % main_task handles sca
 end
 
 % ── 4. Determine Outcome ─────────────────────────────────────────────────
-missedResponse = (choice == -1);
-gambleChosen   = (choice == 1);
-gambleWon      = false;
-secondNum      = NaN;
-reward         = 0;
+missedResponse   = (choice == -1);
+gambleChosen     = (choice == 1);
+gambleWon        = false;
+secondNum        = NaN;
+reward           = 0;
 isStreakEnforced = false;
 
 if ~missedResponse && gambleChosen
+    % Adaptive streak sequencing
     [secondNum, gambleWon, isStreakEnforced] = enforce_outcome( ...
         firstNum, blockType, winProb, streakProgress, streakTarget, cfg);
 
-    % Update streak progress counter
+    % Update streak progress
     if isStreakEnforced
         streakProgress = streakProgress + 1;
     end
     if streakProgress >= streakTarget
-        % Streak complete — reset for next streak
         streakProgress = 0;
         streakTarget   = randi([cfg.streakMin, cfg.streakMax]);
     end
@@ -64,12 +64,10 @@ if ~missedResponse && gambleChosen
     reward = double(gambleWon) * gambleAmt;
 
 elseif ~missedResponse && ~gambleChosen
-    % Safe chosen
     reward = cfg.safeReward;
 end
 
-% ── 5. Outcome Display ────────────────────────────────────────────────────
-% draw_outcome handles Flip + WaitSecs internally
+% ── 5. Outcome Display (flip + wait inside draw_outcome) ─────────────────
 flipTime_outcome = draw_outcome(scr, cfg, choice, gambleChosen, ...
                                 gambleWon, gambleAmt, firstNum, secondNum);
 
@@ -79,12 +77,12 @@ flipTime_outcome = draw_outcome(scr, cfg, choice, gambleChosen, ...
                                               currentStreak, lastOutcome);
 lostChase = double(gambleChosen && currentStreak >= 2);
 
-% ── 7. ITI ────────────────────────────────────────────────────────────────
+% ── 7. ITI — blank screen ────────────────────────────────────────────────
 Screen('FillRect', scr.win, scr.black);
 Screen('Flip', scr.win);
 WaitSecs(cfg.timing.iti - scr.ifi/2);
 
-% ── 8. Log Data ───────────────────────────────────────────────────────────
+% ── 8. Log trial data ─────────────────────────────────────────────────────
 trialData.trialNum(trialIdx)             = trialIdx;
 trialData.blockNum(trialIdx)             = b;
 trialData.blockType(trialIdx)            = blockType;
